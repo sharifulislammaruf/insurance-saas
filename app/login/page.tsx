@@ -187,6 +187,29 @@ export default function LoginPage() {
           </form>
         </div>
 
+{/* Demo Credentials */}
+<div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+  <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-2">🔑 Demo Credentials</p>
+  <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-sm">
+    <div className="flex items-center gap-2">
+      <span className="text-gray-600 dark:text-gray-400">Email:</span>
+      <code className="px-2 py-1 bg-white dark:bg-gray-800 rounded text-blue-600 dark:text-blue-400 font-mono text-xs">
+        mdsislammaruf@gmail.com
+      </code>
+    </div>
+    <div className="flex items-center gap-2">
+      <span className="text-gray-600 dark:text-gray-400">Password:</span>
+      <code className="px-2 py-1 bg-white dark:bg-gray-800 rounded text-blue-600 dark:text-blue-400 font-mono text-xs">
+        12345678
+      </code>
+    </div>
+  </div>
+  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+    Use these credentials to explore the dashboard
+  </p>
+</div>
+
+
         {/* Footer - Single Contact Section */}
         <div className="mt-6">
           <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100/50 p-4">
@@ -215,10 +238,10 @@ export default function LoginPage() {
                   LinkedIn
                 </a>
                 <a
-                  href="https://github.com/your-profile"
+                  href="https://github.com/sharifulislammaruf"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-gray-800 transition-colors"
+                  className="text-[#0077B5] hover:text-[#005e8c] transition-colors"
                 >
                   GitHub
                 </a>

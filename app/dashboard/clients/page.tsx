@@ -18,6 +18,8 @@ import {
   XCircle,
   Clock
 } from 'lucide-react'
+import { useNotifications } from '@/app/context/NotificationContext'
+import ExportButton from '@/app/components/ExportButton'
 
 interface Client {
   id: string
@@ -31,6 +33,7 @@ interface Client {
 }
 
 export default function ClientsPage() {
+  const { addNotification } = useNotifications()
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -42,7 +45,6 @@ export default function ClientsPage() {
       
       console.log('🔍 Fetching clients...')
       
-      // Get all clients
       const { data: allClients, error: fetchError } = await supabase
         .from('clients')
         .select('*')
@@ -77,6 +79,18 @@ export default function ClientsPage() {
     fetchClients()
   }, [])
 
+  // Real-time subscription for clients
+  useEffect(() => {
+    const subscription = supabase
+      .channel('clients-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => fetchClients())
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
   // Filter clients
   const filteredClients = clients.filter(client => {
     // Search filter
@@ -101,12 +115,12 @@ export default function ClientsPage() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      active: 'bg-green-100 text-green-700',
-      pending: 'bg-yellow-100 text-yellow-700',
-      inactive: 'bg-gray-100 text-gray-700 dark:text-gray-300',
-      suspended: 'bg-red-100 text-red-700'
+      active: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+      pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+      inactive: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
+      suspended: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
     }
-    return colors[status] || 'bg-gray-100 text-gray-700 dark:text-gray-300'
+    return colors[status] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
   }
 
   const getStatusIcon = (status: string) => {
@@ -136,7 +150,7 @@ export default function ClientsPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading clients...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading clients...</p>
         </div>
       </div>
     )
@@ -152,14 +166,26 @@ export default function ClientsPage() {
             Manage all your insurance clients
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <ExportButton
+            data={filteredClients}
+            filename="clients"
+            headers={[
+              { key: 'first_name', label: 'First Name' },
+              { key: 'last_name', label: 'Last Name' },
+              { key: 'email', label: 'Email' },
+              { key: 'phone', label: 'Phone' },
+              { key: 'country', label: 'Country' },
+              { key: 'status', label: 'Status' },
+            ]}
+          />
           <button
             onClick={fetchClients}
-            className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors border border-gray-200 dark:border-gray-700"
           >
             <RefreshCw className="h-5 w-5" />
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
             <Plus className="h-4 w-4" />
             Add Client
           </button>
@@ -168,22 +194,22 @@ export default function ClientsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white dark:bg-gray-800 dark:bg-gray-800 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">Total Clients</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{clients.length}</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 dark:bg-gray-800 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">Active Clients</p>
-          <p className="text-2xl font-bold text-green-600">{activeClients}</p>
+          <p className="text-2xl font-bold text-green-600 dark:text-green-400">{activeClients}</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 dark:bg-gray-800 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">Pending Clients</p>
-          <p className="text-2xl font-bold text-yellow-600">{pendingClients}</p>
+          <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{pendingClients}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 dark:bg-gray-800 p-4 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -199,7 +225,7 @@ export default function ClientsPage() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white-700 text-sm bg-white dark:bg-gray-800 dark:bg-gray-800"
+              className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 dark:text-gray-300 text-sm bg-white dark:bg-gray-900"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -212,9 +238,9 @@ export default function ClientsPage() {
       </div>
 
       {/* Clients Table */}
-      <div className="bg-white dark:bg-gray-800 dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900/50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -237,13 +263,13 @@ export default function ClientsPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredClients.length > 0 ? (
                 filteredClients.map((client) => (
-                  <tr key={client.id} className="hover:bg-gray-50 dark:bg-gray-900/50 dark:hover:bg-gray-900/50 transition-colors">
+                  <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
+                        <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold">
                           {client.first_name?.[0]}{client.last_name?.[0]}
                         </div>
                         <div className="ml-3">
@@ -283,13 +309,13 @@ export default function ClientsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button className="text-blue-600 hover:text-blue-900 mr-3">
+                      <button className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button className="text-gray-600 hover:text-gray-900 dark:text-white mr-3">
+                      <button className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 mr-3">
                         <Edit className="h-4 w-4" />
                       </button>
-                      <button className="text-red-600 hover:text-red-900">
+                      <button className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </td>
@@ -298,7 +324,7 @@ export default function ClientsPage() {
               ) : (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                    <Users className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                    <Users className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
                     <p>No clients found</p>
                     <p className="text-sm">Add your first client to get started</p>
                   </td>

@@ -372,7 +372,7 @@ export default function Dashboard() {
                   LinkedIn
                 </a>
                 <a
-                  href="https://github.com/your-profile"
+                  href="https://github.com/sharifulislammaruf"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-5 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium flex items-center gap-2 shadow-lg shadow-gray-800/20"
@@ -410,7 +410,14 @@ export default function Dashboard() {
 }
 
 // Stat Card Component
-function StatCard({ icon: Icon, label, value, subtext, color }: any) {
+// Stat Card Component
+function StatCard({ icon: Icon, label, value, subtext, color }: { 
+  icon: any
+  label: string
+  value: string | number
+  subtext: string
+  color: 'blue' | 'purple' | 'green' | 'orange'
+}) {
   const colors = {
     blue: 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
     purple: 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',

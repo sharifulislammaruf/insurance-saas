@@ -22,6 +22,8 @@ import {
   AlertCircle,
   TrendingUp
 } from 'lucide-react'
+import { useNotifications } from '@/app/context/NotificationContext'
+import ExportButton from '@/app/components/ExportButton'
 
 interface Lead {
   id: string
@@ -40,6 +42,7 @@ interface Lead {
 }
 
 export default function LeadsPage() {
+  const { addNotification } = useNotifications()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -52,7 +55,6 @@ export default function LeadsPage() {
       
       console.log('🔍 Fetching leads...')
       
-      // Get all leads
       const { data: allLeads, error: fetchError } = await supabase
         .from('leads')
         .select('*')
@@ -87,6 +89,18 @@ export default function LeadsPage() {
     fetchLeads()
   }, [])
 
+  // Real-time subscription for leads
+  useEffect(() => {
+    const subscription = supabase
+      .channel('leads-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => fetchLeads())
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
   // Filter leads
   const filteredLeads = leads.filter(lead => {
     // Search filter
@@ -117,15 +131,15 @@ export default function LeadsPage() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      new: 'bg-blue-100 text-blue-700',
-      contacted: 'bg-yellow-100 text-yellow-700',
-      qualified: 'bg-green-100 text-green-700',
-      proposal: 'bg-purple-100 text-purple-700',
-      negotiation: 'bg-orange-100 text-orange-700',
-      converted: 'bg-emerald-100 text-emerald-700',
-      lost: 'bg-red-100 text-red-700'
+      new: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+      contacted: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+      qualified: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+      proposal: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+      negotiation: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+      converted: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+      lost: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
     }
-    return colors[status] || 'bg-gray-100 text-gray-700 dark:text-gray-300'
+    return colors[status] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
   }
 
   const getStatusIcon = (status: string) => {
@@ -143,14 +157,14 @@ export default function LeadsPage() {
 
   const getSourceBadgeColor = (source: string) => {
     const colors: Record<string, string> = {
-      website: 'bg-blue-100 text-blue-700',
-      referral: 'bg-green-100 text-green-700',
-      social_media: 'bg-purple-100 text-purple-700',
-      email: 'bg-yellow-100 text-yellow-700',
-      phone: 'bg-orange-100 text-orange-700',
-      walk_in: 'bg-gray-100 text-gray-700 dark:text-gray-300'
+      website: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+      referral: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+      social_media: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+      email: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+      phone: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+      walk_in: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
     }
-    return colors[source] || 'bg-gray-100 text-gray-700 dark:text-gray-300'
+    return colors[source] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
   }
 
   const formatDate = (dateString: string) => {
@@ -174,7 +188,7 @@ export default function LeadsPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading leads...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading leads...</p>
         </div>
       </div>
     )
@@ -190,14 +204,28 @@ export default function LeadsPage() {
             Track and manage potential clients
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <ExportButton
+            data={filteredLeads}
+            filename="leads"
+            headers={[
+              { key: 'first_name', label: 'First Name' },
+              { key: 'last_name', label: 'Last Name' },
+              { key: 'email', label: 'Email' },
+              { key: 'phone', label: 'Phone' },
+              { key: 'interest', label: 'Interest' },
+              { key: 'source', label: 'Source' },
+              { key: 'status', label: 'Status' },
+              { key: 'budget', label: 'Budget' },
+            ]}
+          />
           <button
             onClick={fetchLeads}
-            className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors border border-gray-200 dark:border-gray-700"
           >
             <RefreshCw className="h-5 w-5" />
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
             <Plus className="h-4 w-4" />
             Add Lead
           </button>
@@ -212,15 +240,15 @@ export default function LeadsPage() {
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">New Leads</p>
-          <p className="text-2xl font-bold text-blue-600">{newLeads}</p>
+          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{newLeads}</p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">Qualified</p>
-          <p className="text-2xl font-bold text-purple-600">{qualifiedLeads}</p>
+          <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{qualifiedLeads}</p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">Conversion Rate</p>
-          <p className="text-2xl font-bold text-green-600">{conversionRate}%</p>
+          <p className="text-2xl font-bold text-green-600 dark:text-green-400">{conversionRate}%</p>
         </div>
       </div>
 
@@ -241,7 +269,7 @@ export default function LeadsPage() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 dark:text-gray-300 text-sm bg-white dark:bg-gray-800"
+              className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 dark:text-gray-300 text-sm bg-white dark:bg-gray-900"
             >
               <option value="all">All Status</option>
               <option value="new">New</option>
@@ -255,7 +283,7 @@ export default function LeadsPage() {
             <select
               value={filterSource}
               onChange={(e) => setFilterSource(e.target.value)}
-              className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 dark:text-gray-300 text-sm bg-white dark:bg-gray-800"
+              className="px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 dark:text-gray-300 text-sm bg-white dark:bg-gray-900"
             >
               <option value="all">All Sources</option>
               <option value="website">Website</option>
@@ -272,7 +300,7 @@ export default function LeadsPage() {
       {/* Leads Table */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900/50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -301,13 +329,13 @@ export default function LeadsPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredLeads.length > 0 ? (
                 filteredLeads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-gray-50 dark:bg-gray-900/50 dark:hover:bg-gray-900/50 transition-colors">
+                  <tr key={lead.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-semibold">
+                        <div className="h-10 w-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 font-semibold">
                           {lead.first_name?.[0]}{lead.last_name?.[0]}
                         </div>
                         <div className="ml-3">
@@ -360,13 +388,13 @@ export default function LeadsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button className="text-blue-600 hover:text-blue-900 mr-3">
+                      <button className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button className="text-gray-600 hover:text-gray-900 dark:text-white mr-3">
+                      <button className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 mr-3">
                         <Edit className="h-4 w-4" />
                       </button>
-                      <button className="text-red-600 hover:text-red-900">
+                      <button className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </td>
@@ -375,7 +403,7 @@ export default function LeadsPage() {
               ) : (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                    <Target className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                    <Target className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
                     <p>No leads found</p>
                     <p className="text-sm">Start capturing leads to grow your business</p>
                   </td>

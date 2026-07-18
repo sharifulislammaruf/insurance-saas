@@ -134,12 +134,15 @@ export default function ClaimsPage() {
   }, [])
 
   useEffect(() => {
-    const subscription = supabase
-      .channel('claims-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'claims' }, () => fetchClaims())
-      .subscribe()
-    return () => subscription.unsubscribe()
-  }, [])
+  const subscription = supabase
+    .channel('claims-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'claims' }, () => fetchClaims())
+    .subscribe()
+
+  return () => {
+    subscription.unsubscribe()
+  }
+}, [])
 
   const updateClaimStatus = async (claimId: string, newStatus: string) => {
     try {

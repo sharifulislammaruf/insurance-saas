@@ -29,7 +29,7 @@ export default function Footer() {
             LinkedIn
           </a>
           <a
-            href="https://github.com/your-profile"
+            href="https://github.com/sharifulislammaruf"
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-gray-500 hover:text-gray-800 transition-colors"

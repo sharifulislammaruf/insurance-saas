@@ -136,25 +136,15 @@ export default function PoliciesPage() {
 
   // Real-time subscription for policies
   useEffect(() => {
-    const subscription = supabase
-      .channel('policies-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'policies'
-        },
-        () => {
-          fetchPolicies()
-        }
-      )
-      .subscribe()
+  const subscription = supabase
+    .channel('policies-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'policies' }, () => fetchPolicies())
+    .subscribe()
 
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [])
+  return () => {
+    subscription.unsubscribe()
+  }
+}, [])
 
   // Check for duplicate policy number
   const checkDuplicatePolicy = async (policyNumber: string, excludeId?: string) => {
